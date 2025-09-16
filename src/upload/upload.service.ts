@@ -29,7 +29,11 @@ export class UploadService {
           price: good.p1,
           display_in_showcase: good.qtty > 0,
           presence: good.qtty > 0 ? 'у наявності' : 'немає в наявності',
-          ...(group?.level === 2 ? { parent: group.name } : {}),
+          ...(group?.level === 2
+            ? { parent: group.name }
+            : group?.level === 1
+              ? { parent: group.name }
+              : {}),
           residues: [
             {
               warehouse: 'office',
