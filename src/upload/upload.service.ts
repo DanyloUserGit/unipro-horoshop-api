@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { error } from 'console';
 import * as fs from 'fs';
 import * as path from 'path';
 import { HoroshopService } from 'src/horoshop/horoshop.service';
@@ -18,9 +17,19 @@ export class UploadService {
         message: `JSON успішно отримано`,
         details: { jsonLength: json.length },
       });
+
+      const configPath = path.join(__dirname, '../../config/config.json');
+      let limit = 0;
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        limit = Number(config.limit) || 0;
+      }
+
       const groups = this.mapGroups(json.goodsgroups);
 
-      const transformed = json.goods.map((good) => {
+      const filteredGoods = json.goods.filter((good) => good.qtty > limit);
+
+      const transformed = filteredGoods.map((good) => {
         const group = groups[good.group] || null;
 
         return {
@@ -42,12 +51,14 @@ export class UploadService {
           ],
         };
       });
+
       logger.info({
         importId,
         stage: 'processJson',
         message: `JSON успішно трансформовано`,
         details: { totalGoods: transformed.length },
       });
+
       const dir = path.join(__dirname, '../../data');
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
