@@ -27,17 +27,18 @@ export class UploadService {
 
       const groups = this.mapGroups(json.goodsgroups);
 
-      const filteredGoods = json.goods.filter((good) => good.qtty > limit);
-
-      const transformed = filteredGoods.map((good) => {
+      const transformed = json.goods.map((good) => {
         const group = groups[good.group] || null;
+        const isBelowLimit = good.qtty <= limit;
+
+        const quantity = isBelowLimit ? 0 : good.qtty;
 
         return {
           article: good.code,
           title: { ua: good.namefull },
           price: good.p1,
-          display_in_showcase: good.qtty > 0,
-          presence: good.qtty > 0 ? 'у наявності' : 'немає в наявності',
+          display_in_showcase: quantity > 0,
+          presence: quantity > 0 ? 'у наявності' : 'немає в наявності',
           ...(group?.level === 2
             ? { parent: group.name }
             : group?.level === 1
@@ -46,7 +47,7 @@ export class UploadService {
           residues: [
             {
               warehouse: 'office',
-              quantity: good.qtty,
+              quantity,
             },
           ],
         };
@@ -72,6 +73,7 @@ export class UploadService {
         stage: 'authAndUpload',
         message: `Початок вивантаження на Хорошоп`,
       });
+
       await this.horoshopService.authAndUpload(transformed, importId);
     } catch (err) {
       throw err;
