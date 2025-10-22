@@ -29,9 +29,15 @@ export class UploadService {
 
       const transformed = json.goods.map((good) => {
         const group = groups[good.group] || null;
-        const isBelowLimit = good.qtty <= limit;
 
-        const quantity = isBelowLimit ? 0 : good.qtty;
+        // 🔹 Конвертуємо кількість у число
+        const qttyNum = Number(good.qtty);
+
+        // 🔹 Якщо кількість не число або NaN — ставимо 0
+        const realQty = isNaN(qttyNum) ? 0 : qttyNum;
+
+        const isBelowLimit = realQty <= limit;
+        const quantity = isBelowLimit ? 0 : realQty;
 
         return {
           article: good.code,
@@ -73,7 +79,7 @@ export class UploadService {
         stage: 'authAndUpload',
         message: `Початок вивантаження на Хорошоп`,
       });
-
+      console.log(transformed[25]);
       await this.horoshopService.authAndUpload(transformed, importId);
     } catch (err) {
       throw err;
