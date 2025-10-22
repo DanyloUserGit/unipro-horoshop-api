@@ -27,24 +27,36 @@ export class UploadService {
 
       const groups = this.mapGroups(json.goodsgroups);
 
-      const transformed = json.goods.map((good) => {
+      const filteredGoods = json.goods.filter((good) => good.qtty > limit);
+
+      const transformed = filteredGoods.map((good) => {
         const group = groups[good.group] || null;
-
-        // 🔹 Конвертуємо кількість у число
-        const qttyNum = Number(good.qtty);
-
-        // 🔹 Якщо кількість не число або NaN — ставимо 0
-        const realQty = isNaN(qttyNum) ? 0 : qttyNum;
-
-        const isBelowLimit = realQty <= limit;
-        const quantity = isBelowLimit ? 0 : realQty;
-
+        if (good.qtty <= limit) {
+          return {
+            article: good.code,
+            title: { ua: good.namefull },
+            price: good.p1,
+            display_in_showcase: good.qtty > 0,
+            presence: good.qtty > 0 ? 'у наявності' : 'немає в наявності',
+            ...(group?.level === 2
+              ? { parent: group.name }
+              : group?.level === 1
+                ? { parent: group.name }
+                : {}),
+            residues: [
+              {
+                warehouse: 'office',
+                quantity: 0,
+              },
+            ],
+          };
+        }
         return {
           article: good.code,
           title: { ua: good.namefull },
           price: good.p1,
-          display_in_showcase: quantity > 0,
-          presence: quantity > 0 ? 'у наявності' : 'немає в наявності',
+          display_in_showcase: good.qtty > 0,
+          presence: good.qtty > 0 ? 'у наявності' : 'немає в наявності',
           ...(group?.level === 2
             ? { parent: group.name }
             : group?.level === 1
@@ -53,7 +65,7 @@ export class UploadService {
           residues: [
             {
               warehouse: 'office',
-              quantity,
+              quantity: good.qtty,
             },
           ],
         };
@@ -79,7 +91,6 @@ export class UploadService {
         stage: 'authAndUpload',
         message: `Початок вивантаження на Хорошоп`,
       });
-      logger.info(transformed[25]);
       await this.horoshopService.authAndUpload(transformed, importId);
     } catch (err) {
       throw err;
