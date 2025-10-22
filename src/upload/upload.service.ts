@@ -79,7 +79,7 @@ export class UploadService {
         stage: 'authAndUpload',
         message: `Початок вивантаження на Хорошоп`,
       });
-      console.log(transformed[25]);
+      logger.info(transformed[25]);
       await this.horoshopService.authAndUpload(transformed, importId);
     } catch (err) {
       throw err;
