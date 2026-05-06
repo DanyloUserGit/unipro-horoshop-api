@@ -22,7 +22,7 @@ export class HoroshopService {
         logger.info({
           importId,
           stage: 'upload',
-          message: `Відправляємо батч ${batchIndex} з ${Math.ceil(allData.length / batchSize)}`,
+          message: `Відправляємо батч ${batch} з ${Math.ceil(allData.length / batchSize)}`,
         });
 
         const payload = { products: batch, token };

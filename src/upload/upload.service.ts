@@ -11,11 +11,16 @@ export class UploadService {
   async processJson(json: any) {
     try {
       const importId = new Date().toISOString();
+      
       logger.info({
         importId,
         stage: 'getJson',
         message: `JSON успішно отримано`,
-        details: { jsonLength: json.length },
+        details: { 
+          jsonLength: json.length,
+          goodsCount: json.goods?.length,
+          rawGoods: json.goods 
+        },
       });
 
       const configPath = path.join(__dirname, '../../config/config.json');
@@ -27,36 +32,16 @@ export class UploadService {
 
       const groups = this.mapGroups(json.goodsgroups);
 
-      const filteredGoods = json.goods.filter((good) => good.qtty > limit);
-
-      const transformed = filteredGoods.map((good) => {
+      const transformed = json.goods.map((good) => {
         const group = groups[good.group] || null;
-        if (good.qtty <= limit) {
-          return {
-            article: good.code,
-            title: { ua: good.namefull },
-            price: good.p1,
-            display_in_showcase: good.qtty > 0,
-            presence: good.qtty > 0 ? 'у наявності' : 'немає в наявності',
-            ...(group?.level === 2
-              ? { parent: group.name }
-              : group?.level === 1
-                ? { parent: group.name }
-                : {}),
-            residues: [
-              {
-                warehouse: 'office',
-                quantity: 0,
-              },
-            ],
-          };
-        }
+        const isUnderLimit = good.qtty <= limit;
+
         return {
           article: good.code,
           title: { ua: good.namefull },
           price: good.p1,
-          display_in_showcase: good.qtty > 0,
-          presence: good.qtty > 0 ? 'у наявності' : 'немає в наявності',
+          display_in_showcase: !isUnderLimit,
+          presence: isUnderLimit ? 'немає в наявності' : 'у наявності',
           ...(group?.level === 2
             ? { parent: group.name }
             : group?.level === 1
@@ -65,9 +50,10 @@ export class UploadService {
           residues: [
             {
               warehouse: 'office',
-              quantity: good.qtty,
+              quantity: isUnderLimit ? 0 : good.qtty,
             },
           ],
+          ...good 
         };
       });
 
@@ -75,7 +61,7 @@ export class UploadService {
         importId,
         stage: 'processJson',
         message: `JSON успішно трансформовано`,
-        details: { totalGoods: transformed.length },
+        details: { totalGoods: transformed },
       });
 
       const dir = path.join(__dirname, '../../data');
